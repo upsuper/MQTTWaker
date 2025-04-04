@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory android:title="MQTT Settings">
+        <EditTextPreference
+            android:key="mqtt_server"
+            android:title="MQTT Server"
+            android:summary="Enter the MQTT server address (e.g., tcp://broker.hivemq.com:1883)"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            android:key="mqtt_topic"
+            android:title="MQTT Topic"
+            android:summary="Topic to subscribe for screen control commands"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            android:key="mqtt_username"
+            android:title="Username"
+            android:summary="MQTT server username (leave empty if not required)"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            android:key="mqtt_password"
+            android:title="Password"
+            android:summary="MQTT server password (leave empty if not required)"
+            android:inputType="textPassword"
+            app:useSimpleSummaryProvider="false" />
+
+        <EditTextPreference
+            android:key="mqtt_client_id"
+            android:title="Client ID"
+            android:summary="Optional: Custom MQTT client ID"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreferenceCompat
+            android:key="mqtt_ssl_use_custom_cert"
+            android:title="Use Custom Certificate"
+            android:summary="Enable to select a custom SSL certificate instead of using system certificates"
+            android:defaultValue="false" />
+
+        <Preference
+            android:key="mqtt_ssl_select_cert"
+            android:title="Select Custom Certificate"
+            android:summary="Select a custom SSL certificate file"
+            android:dependency="mqtt_ssl_use_custom_cert" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Browser Settings">
+        <EditTextPreference
+            android:key="browser_url"
+            android:title="URL to Open"
+            android:summary="URL to open when screen is turned on"
+            app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Service Control">
+        <SwitchPreferenceCompat
+            android:key="service_enabled"
+            android:title="Enable MQTT Service"
+            android:summary="Run MQTT service in the background"
+            android:defaultValue="false" />
+    </PreferenceCategory>
+
+</PreferenceScreen>
