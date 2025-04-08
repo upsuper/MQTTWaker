@@ -39,8 +39,8 @@ class MQTTService : Service() {
         private const val TAG = "MQTTService"
         private const val NOTIFICATION_ID = 1
         private const val CHANNEL_ID = "mqtt_waker_channel"
-        private const val SCREEN_STATE_ON = "on"
-        private const val SCREEN_STATE_OFF = "off"
+        private const val SCREEN_STATE_ON = "ON"
+        private const val SCREEN_STATE_OFF = "OFF"
     }
 
     private lateinit var mqttClient: MqttAndroidClient
@@ -201,9 +201,9 @@ class MQTTService : Service() {
                 val payload = String(message.payload)
                 Log.d(TAG, "Message received on topic $topic: $payload")
 
-                when (payload.trim().lowercase()) {
-                    "on" -> wakeScreen()
-                    "off" -> lockScreen()
+                when (payload.trim().uppercase()) {
+                    "ON" -> wakeScreen()
+                    "OFF" -> lockScreen()
                     else -> Log.d(TAG, "Unknown command: $payload")
                 }
             }
