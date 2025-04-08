@@ -10,6 +10,7 @@ MQTT Waker is an Android application that allows you to remotely wake and lock y
 - Wake device screen remotely via MQTT commands
 - Lock device screen remotely via MQTT commands
 - Optionally open a specific URL when the device wakes
+- Publish screen on/off state changes to a configurable MQTT topic
 - Support for custom certificates
 - Automatically start on device boot
 - Runs as a foreground service for reliability
@@ -45,6 +46,14 @@ The app requires the following permissions:
 The app subscribes to the configured MQTT topic and responds to these messages:
 - `on`: Turns on the device screen and optionally opens a URL
 - `off`: Locks the device screen
+
+## MQTT State Publishing
+
+The app will publish the current screen state to the configured publish topic:
+- `on`: Published when the screen turns on
+- `off`: Published when the screen turns off
+
+The state is published as a retained message with QoS level 1 (at least once). To use this feature, simply configure a publish topic in the app settings.
 
 ## Building from Source
 

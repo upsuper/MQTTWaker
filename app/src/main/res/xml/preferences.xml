@@ -10,9 +10,15 @@
             app:useSimpleSummaryProvider="true" />
 
         <EditTextPreference
-            android:key="mqtt_topic"
-            android:title="MQTT Topic"
+            android:key="mqtt_sub_topic"
+            android:title="Subscribe Topic"
             android:summary="Topic to subscribe for screen control commands"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            android:key="mqtt_pub_topic"
+            android:title="Publish Topic"
+            android:summary="Topic to publish screen state updates to"
             app:useSimpleSummaryProvider="true" />
 
         <EditTextPreference

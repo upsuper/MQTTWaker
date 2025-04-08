@@ -6,11 +6,14 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.app.admin.DevicePolicyManager
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.net.Uri
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.preference.PreferenceManager
@@ -36,34 +39,58 @@ class MQTTService : Service() {
         private const val TAG = "MQTTService"
         private const val NOTIFICATION_ID = 1
         private const val CHANNEL_ID = "mqtt_waker_channel"
+        private const val SCREEN_STATE_ON = "on"
+        private const val SCREEN_STATE_OFF = "off"
     }
 
     private lateinit var mqttClient: MqttAndroidClient
     private var isConnected = false
     private var serverUri = ""
-    private var topic = ""
+    private var subscribeTopic = ""
+    private var publishTopic = ""
     private var clientId = ""
     private var username = ""
     private var password = ""
     private var browserUrl = ""
     private var useCustomCert = false
     private var customCertUri: Uri? = null
+    private var screenStateReceiver: BroadcastReceiver? = null
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, createNotification("MQTT Waker Service Starting"))
+        registerScreenStateReceiver()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        loadSettings()
-        connectToMqttBroker()
+        Log.d(TAG, "onStartCommand called with action: ${intent?.action}")
+        
+        // First time service start or restart
+        if (intent == null || intent.action == null) {
+            Log.d(TAG, "Initial service start or restart")
+            loadSettings()
+            connectToMqttBroker()
+        }
+        // Handle screen state events
+        else when (intent.action) {
+            Intent.ACTION_SCREEN_ON -> {
+                Log.d(TAG, "Received SCREEN_ON action")
+                publishScreenState(SCREEN_STATE_ON)
+            }
+            Intent.ACTION_SCREEN_OFF -> {
+                Log.d(TAG, "Received SCREEN_OFF action")
+                publishScreenState(SCREEN_STATE_OFF)
+            }
+            else -> Log.d(TAG, "Received unknown action: ${intent.action}")
+        }
         return START_STICKY
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        unregisterScreenStateReceiver()
         disconnectMqtt()
         super.onDestroy()
     }
@@ -71,7 +98,8 @@ class MQTTService : Service() {
     private fun loadSettings() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         serverUri = prefs.getString("mqtt_server", "") ?: ""
-        topic = prefs.getString("mqtt_topic", "") ?: ""
+        subscribeTopic = prefs.getString("mqtt_sub_topic", "") ?: ""
+        publishTopic = prefs.getString("mqtt_pub_topic", "") ?: ""
         username = prefs.getString("mqtt_username", "") ?: ""
         password = prefs.getString("mqtt_password", "") ?: ""
         clientId = prefs.getString("mqtt_client_id", "") ?: ""
@@ -85,12 +113,12 @@ class MQTTService : Service() {
 
         Log.d(
             TAG,
-            "Settings loaded - Server: $serverUri, Topic: $topic, Username: ${if (username.isNotBlank()) "set" else "not set"}, SSL: ${if (useCustomCert) "custom cert" else "system certs"}"
+            "Settings loaded - Server: $serverUri, Subscribe Topic: $subscribeTopic, Publish Topic: $publishTopic, Username: ${if (username.isNotBlank()) "set" else "not set"}, SSL: ${if (useCustomCert) "custom cert" else "system certs"}"
         )
     }
 
     private fun connectToMqttBroker() {
-        if (serverUri.isBlank() || topic.isBlank()) {
+        if (serverUri.isBlank() || subscribeTopic.isBlank()) {
             Log.e(TAG, "MQTT server or topic not configured")
             updateNotification("Error: MQTT server or topic not configured")
             return
@@ -103,6 +131,7 @@ class MQTTService : Service() {
                 Log.d(TAG, "Connected to MQTT broker: $serverURI")
                 updateNotification("Connected to MQTT broker")
                 subscribeToTopic()
+                publishInitialScreenState()
             }
 
             override fun connectionLost(cause: Throwable?) {
@@ -185,7 +214,7 @@ class MQTTService : Service() {
 
     private fun subscribeToTopic() {
         try {
-            mqttClient.subscribe(topic, QoS.AtMostOnce.value) { topic, message ->
+            mqttClient.subscribe(subscribeTopic, QoS.AtMostOnce.value) { topic, message ->
                 val payload = String(message.payload)
                 Log.d(TAG, "Message received on topic $topic: $payload")
 
@@ -196,7 +225,7 @@ class MQTTService : Service() {
                 }
             }
 
-            updateNotification("Subscribed to topic: $topic")
+            updateNotification("Subscribed to topic: $subscribeTopic")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to subscribe to topic", e)
             updateNotification("Failed to subscribe to topic: ${e.message}")
@@ -294,6 +323,74 @@ class MQTTService : Service() {
     private fun updateNotification(message: String) {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(NOTIFICATION_ID, createNotification(message))
+    }
+    
+    private fun registerScreenStateReceiver() {
+        if (screenStateReceiver != null) {
+            return
+        }
+        
+        Log.d(TAG, "Registering screen state receiver")
+        screenStateReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                val action = intent.action
+                Log.d(TAG, "Received screen state broadcast: $action")
+                
+                when (action) {
+                    Intent.ACTION_SCREEN_ON -> publishScreenState(SCREEN_STATE_ON)
+                    Intent.ACTION_SCREEN_OFF -> publishScreenState(SCREEN_STATE_OFF)
+                }
+            }
+        }
+        
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
+        }
+        registerReceiver(screenStateReceiver, filter)
+        Log.d(TAG, "Screen state receiver registered")
+    }
+    
+    private fun unregisterScreenStateReceiver() {
+        publishScreenState("");
+        Log.d(TAG, "Unregistering screen state receiver")
+        screenStateReceiver?.let {
+            try {
+                unregisterReceiver(it)
+                Log.d(TAG, "Screen state receiver unregistered")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error unregistering screen state receiver", e)
+            }
+        }
+        screenStateReceiver = null
+    }
+    
+    private fun publishInitialScreenState() {
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val isScreenOn = powerManager.isInteractive
+        val state = if (isScreenOn) SCREEN_STATE_ON else SCREEN_STATE_OFF
+        
+        publishScreenState(state)
+        Log.d(TAG, "Published initial screen state: $state")
+    }
+    
+    private fun publishScreenState(state: String) {
+        Log.d(TAG, "Attempting to publish screen state: $state, connected: $isConnected, topic: $publishTopic")
+        if (!isConnected || publishTopic.isBlank()) {
+            Log.d(TAG, "Cannot publish screen state: not connected or topic not set")
+            return
+        }
+        
+        try {
+            val message = MqttMessage(state.toByteArray())
+            message.qos = QoS.AtLeastOnce.value
+            message.isRetained = true
+
+            mqttClient.publish(publishTopic, message)
+            Log.d(TAG, "Published screen state '$state' to topic '$publishTopic'")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to publish screen state", e)
+        }
     }
 
     private fun createCustomSSLContext(certUri: Uri): SSLContext {
