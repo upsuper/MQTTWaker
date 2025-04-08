@@ -65,25 +65,8 @@ class MQTTService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onStartCommand called with action: ${intent?.action}")
-        
-        // First time service start or restart
-        if (intent == null || intent.action == null) {
-            Log.d(TAG, "Initial service start or restart")
-            loadSettings()
-            connectToMqttBroker()
-        }
-        // Handle screen state events
-        else when (intent.action) {
-            Intent.ACTION_SCREEN_ON -> {
-                Log.d(TAG, "Received SCREEN_ON action")
-                publishScreenState(SCREEN_STATE_ON)
-            }
-            Intent.ACTION_SCREEN_OFF -> {
-                Log.d(TAG, "Received SCREEN_OFF action")
-                publishScreenState(SCREEN_STATE_OFF)
-            }
-            else -> Log.d(TAG, "Received unknown action: ${intent.action}")
-        }
+        loadSettings()
+        connectToMqttBroker()
         return START_STICKY
     }
 
