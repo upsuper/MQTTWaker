@@ -15,13 +15,15 @@ MQTT Waker is an Android application that allows you to remotely wake and lock y
 - Automatically start on device boot
 - Runs as a foreground service for reliability
 
-## Use Cases
+## Home Assistant
 
-- Home automation integration
-- Remote device monitoring
-- Digital signage applications
-- IoT control systems
-- Remote device management
+This app can be used to provide a [MQTT Switch](https://www.home-assistant.io/integrations/switch.mqtt/) in Home Assistant for the Android device by simply adding the following configuration to configuration:
+```yaml
+- mqtt
+  - switch:
+      command_topic: "<subscribe topic>"
+      state_topic: "<publish topic>"
+```
 
 ## Required Permissions
 
@@ -44,14 +46,14 @@ The app requires the following permissions:
 ## MQTT Commands
 
 The app subscribes to the configured MQTT topic and responds to these messages:
-- `on`: Turns on the device screen and optionally opens a URL
-- `off`: Locks the device screen
+- `ON`: Turns on the device screen and optionally opens a URL
+- `OFF`: Locks the device screen
 
 ## MQTT State Publishing
 
 The app will publish the current screen state to the configured publish topic:
-- `on`: Published when the screen turns on
-- `off`: Published when the screen turns off
+- `ON`: Published when the screen turns on
+- `OFF`: Published when the screen turns off
 
 The state is published as a retained message with QoS level 1 (at least once). To use this feature, simply configure a publish topic in the app settings.
 
