@@ -17,22 +17,10 @@ class WakeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Minimal empty layout - this activity is just for waking the screen
-        setContentView(R.layout.activity_wake)
-
         Log.d(TAG, "WakeActivity created, screen should be on")
 
-        // Get URL from preferences and open it using the main thread handler
-        // This ensures more reliable browser launching
-        Handler(Looper.getMainLooper()).postDelayed({
-            openBrowserUrl()
-
-            // Give the browser a moment to open before finishing
-            Handler(Looper.getMainLooper()).postDelayed({
-                Log.d(TAG, "Finishing WakeActivity")
-                finish()
-            }, 2000) // 2 seconds delay
-        }, 500) // small delay to ensure screen is fully on
+        openBrowserUrl()
+        finish()
     }
 
     private fun openBrowserUrl() {
