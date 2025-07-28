@@ -1,6 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-    <!-- Empty layout as this activity is just for waking the screen -->
+    android:layout_height="match_parent"
+    android:background="#80000000">
+
+    <!-- Watermark indicating the activity is still open -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="MQTT Waker - Opening Browser..."
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:padding="16dp"
+        android:background="#CC000000"
+        android:layout_marginBottom="60dp" />
+
+    <!-- Manual close button -->
+    <Button
+        android:id="@+id/btnClose"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="60dp"
+        android:text="Close Manually"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#FF4444" />
+
 </FrameLayout>
